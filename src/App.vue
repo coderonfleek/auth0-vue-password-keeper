@@ -1,8 +1,10 @@
 <template>
   <div id="app">
-    <button @click="login()">Login To Auth0</button>
+    <button @click="login()" v-if="!$auth.isAuthenticated">Login To Auth0</button>
     <p v-if="$auth.isAuthenticated">
       Logged In
+      <br />
+      <button @click="logout()">Logout</button>
     </p>
     <img alt="Vue logo" src="./assets/logo.png" />
     <HelloWorld msg="Welcome to Your Vue.js App" />
@@ -19,7 +21,10 @@ export default {
   },
   methods: {
     login() {
-      this.$auth.loginWithPopup();
+      this.$auth.login();
+    },
+    logout() {
+      this.$auth.logout();
     }
   }
 };

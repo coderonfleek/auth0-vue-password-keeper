@@ -28,53 +28,12 @@ export const useAuth0 = options => {
     },
     methods: {
       /** Authenticates the user using a popup window */
-      async loginWithPopup(loginOptions) {
+      login(loginOptions) {
         this.popupOpen = true;
 
         this.auth0Lock.show(loginOptions);
+      },
 
-        /* try {
-          await this.auth0Lock.loginWithPopup(o);
-        } catch (e) {
-          // eslint-disable-next-line
-          console.error(e);
-        } finally {
-          this.popupOpen = false;
-        }
-
-        this.user = await this.auth0Lock.getUser();
-        this.isAuthenticated = true; */
-      },
-      /** Handles the callback when logging in using a redirect */
-      async handleRedirectCallback() {
-        this.loading = true;
-        try {
-          await this.auth0Lock.handleRedirectCallback();
-          this.user = await this.auth0Lock.getUser();
-          this.isAuthenticated = true;
-        } catch (e) {
-          this.error = e;
-        } finally {
-          this.loading = false;
-        }
-      },
-      /** Authenticates the user using the redirect method */
-      loginWithRedirect(o) {
-        return this.auth0Lock.loginWithRedirect(o);
-      },
-      /** Returns all the claims present in the ID token */
-      getIdTokenClaims(o) {
-        return this.auth0Lock.getIdTokenClaims(o);
-      },
-      /** Returns the access token. If the token is invalid or missing, a new one is retrieved */
-      getTokenSilently(o) {
-        return this.auth0Lock.getTokenSilently(o);
-      },
-      /** Gets the access token using a popup window */
-
-      getTokenWithPopup(o) {
-        return this.auth0Lock.getTokenWithPopup(o);
-      },
       /** Logs the user out and removes their session on the authorization server */
       logout(o) {
         return this.auth0Lock.logout(o);
@@ -93,7 +52,7 @@ export const useAuth0 = options => {
           authResult.accessToken,
           (error, profileResult) => {
             if (error) {
-              return;
+              throw error;
             }
 
             console.log(authResult);
@@ -102,8 +61,6 @@ export const useAuth0 = options => {
             this.accessToken = authResult.accessToken;
             this.getUser = profileResult;
             this.isAuthenticated = true;
-
-            // Update DOM
           }
         );
       });
