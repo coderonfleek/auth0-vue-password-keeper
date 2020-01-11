@@ -113,8 +113,6 @@ import { passwords_db } from "../firebase_auth.json";
 import { user_localstorage_key } from "../auth_config.json";
 import modal from "./components/modal";
 
-let loggedInUserEmail = localStorage.getItem(user_localstorage_key);
-
 export default {
   name: "app",
   data() {
@@ -126,19 +124,21 @@ export default {
         show: false,
         header: "My header",
         content: "My Content"
-      }
+      },
+      user: this.$auth.user
     };
   },
-  firestore: {
-    savedpasswords: db
-      .collection(passwords_db)
-      //.orderBy("date", "asc")
-      .where("user", "==", loggedInUserEmail || "")
+  async created() {
+    let profile = await this.$auth.checkSession();
+
+    this.$bind(
+      "savedpasswords",
+      db.collection(passwords_db).where("user", "==", profile.email || "")
+    );
   },
+
   components: { modal },
-  mounted() {
-    this.$auth.checkSession();
-  },
+
   methods: {
     login() {
       this.$auth.login();
