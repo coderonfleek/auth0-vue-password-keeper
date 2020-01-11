@@ -33,10 +33,33 @@ export const useAuth0 = options => {
 
         this.auth0Lock.show(loginOptions);
       },
-
+      checkSession() {
+        this.auth0Lock.checkSession({}, (error, authResult) => {
+          if (error || !authResult) {
+            this.auth0Lock.show();
+          } else {
+            // user has an active session, so we can use the accessToken directly.
+            this.auth0Lock.getUserInfo(
+              authResult.accessToken,
+              (error, profile) => {
+                if (error) {
+                  throw error;
+                }
+                this.setProfileDetails(authResult.accessToken, profile);
+              }
+            );
+          }
+        });
+      },
       /** Logs the user out and removes their session on the authorization server */
       logout(o) {
         return this.auth0Lock.logout(o);
+      },
+      setProfileDetails(token, profile) {
+        console.log(profile);
+        this.accessToken = token;
+        this.user = profile;
+        this.isAuthenticated = true;
       }
     },
     /** Use this lifecycle method to instantiate the SDK client */
@@ -55,12 +78,7 @@ export const useAuth0 = options => {
               throw error;
             }
 
-            console.log(authResult);
-            console.log(profileResult);
-
-            this.accessToken = authResult.accessToken;
-            this.getUser = profileResult;
-            this.isAuthenticated = true;
+            this.setProfileDetails(authResult.accessToken, profileResult);
           }
         );
       });

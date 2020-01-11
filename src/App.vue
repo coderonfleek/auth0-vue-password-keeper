@@ -1,23 +1,117 @@
 <template>
   <div id="app">
-    <button @click="login()" v-if="!$auth.isAuthenticated">Login To Auth0</button>
-    <p v-if="$auth.isAuthenticated">
-      Logged In
-      <br />
-      <button @click="logout()">Logout</button>
-    </p>
-    <img alt="Vue logo" src="./assets/logo.png" />
-    <HelloWorld msg="Welcome to Your Vue.js App" />
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <a class="navbar-brand" href="#"
+        >Password Keeper
+        <span v-if="$auth.isAuthenticated">( {{ $auth.user.name }} )</span>
+      </a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-toggle="collapse"
+        data-target="#navbarText"
+        aria-controls="navbarText"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarText">
+        <div class="navbar-nav mr-auto user-details">
+          <span v-if="$auth.isAuthenticated"> ({{ $auth.user.email }})</span>
+          <span v-else>&nbsp;</span>
+        </div>
+
+        <span class="navbar-text">
+          <ul class="navbar-nav float-right">
+            <li class="nav-item" v-if="!$auth.isAuthenticated">
+              <a class="nav-link" href="#" @click="login()">Log In</a>
+            </li>
+
+            <li class="nav-item" v-if="$auth.isAuthenticated">
+              <a class="nav-link" href="#" @click="logout()">Log Out</a>
+            </li>
+          </ul>
+        </span>
+      </div>
+    </nav>
+
+    <div v-if="!$auth.isAuthenticated" id="welcomeScreen">
+      <h1>Welcome to Vue Password Keeper</h1>
+      <button class="btn btn-primary" @click="login()">Login To Auth0</button>
+    </div>
+    <div v-else id="appScreen" class="container">
+      <div class="row">
+        <div class="col-md-4">
+          <form>
+            <div class="form-group">
+              <label>Enter Account Name</label>
+              <input
+                class="form-control"
+                v-model="passwordForm.account_name"
+                placeholder="E.g My Auth0 Account"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Enter Account ID</label>
+              <input
+                class="form-control"
+                v-model="passwordForm.account_id"
+                placeholder="E.g my@email.com or myusername"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Enter Password </label>
+              <input
+                class="form-control"
+                type="password"
+                v-model="passwordForm.password"
+              />
+              <small class="form-text text-muted">
+                We'll never share your secret with anyone else.
+              </small>
+            </div>
+
+            <button
+              type="button"
+              class="btn btn-primary"
+              @click="savePassword()"
+            >
+              Save Password
+            </button>
+          </form>
+        </div>
+        <div class="col-md-6 offset-md-2">
+          <h3>Saved Passwords</h3>
+          <ul class="list-group">
+            <li class="list-group-item">
+              A Saved Password
+              <button class="btn btn-success float-right">View Password</button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import HelloWorld from "./components/HelloWorld.vue";
+import "bootstrap/dist/css/bootstrap.css";
+var CryptoJS = require("crypto-js");
 
 export default {
   name: "app",
-  components: {
-    HelloWorld
+  data() {
+    return {
+      passwordForm: {},
+      salt: "DE8203F7-48D9-4904-949E-A7A5FA97BB20"
+    };
+  },
+  components: {},
+  mounted() {
+    this.$auth.checkSession();
   },
   methods: {
     login() {
@@ -25,6 +119,14 @@ export default {
     },
     logout() {
       this.$auth.logout();
+    },
+    savePassword() {
+      var ciphertext = CryptoJS.AES.encrypt(
+        this.passwordForm.password,
+        this.$auth.user.sub
+      );
+
+      console.log(ciphertext.toString());
     }
   }
 };
@@ -33,10 +135,12 @@ export default {
 <style>
 #app {
   font-family: "Avenir", Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
+
   color: #2c3e50;
-  margin-top: 60px;
+}
+
+#welcomeScreen,
+#appScreen {
+  margin-top: 20px;
 }
 </style>
