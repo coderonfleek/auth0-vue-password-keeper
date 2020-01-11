@@ -86,6 +86,15 @@
           </ul>
         </div>
       </div>
+
+      <!-- Modal -->
+
+      <modal
+        v-if="modal.show"
+        @close="modal.show = false"
+        :header="modal.header"
+        :content="modal.content"
+      ></modal>
     </div>
   </div>
 </template>
@@ -96,6 +105,7 @@ var CryptoJS = require("crypto-js");
 import db from "./db.js";
 import { passwords_db } from "../firebase_auth.json";
 import { user_localstorage_key } from "../auth_config.json";
+import modal from "./components/modal";
 
 let loggedInUserEmail = localStorage.getItem(user_localstorage_key);
 
@@ -106,7 +116,12 @@ export default {
       passwordForm: {},
       savedpasswords: [],
       salt: "DE8203F7-48D9-4904-949E-A7A5FA97BB20",
-      processing: false
+      processing: false,
+      modal: {
+        show: false,
+        header: "My header",
+        content: "My Content"
+      }
     };
   },
   firestore: {
@@ -115,21 +130,9 @@ export default {
       //.orderBy("date", "asc")
       .where("user", "==", loggedInUserEmail || "")
   },
-  components: {},
+  components: { modal },
   mounted() {
     this.$auth.checkSession();
-
-    //Watch changes and updates to Firestore database
-    db.collection(passwords_db)
-      .where("user", "==", loggedInUserEmail || "")
-      .onSnapshot(doc => {
-        this.processing = false;
-        this.passwordForm = {};
-
-        console.log("New data added");
-        //console.log("Current data: ", doc);
-        //this.savedpasswords = doc.docs;
-      });
   },
   methods: {
     login() {
@@ -138,24 +141,49 @@ export default {
     logout() {
       this.$auth.logout();
     },
-    savePassword() {
-      var ciphertext = CryptoJS.AES.encrypt(
-        this.passwordForm.password,
-        this.$auth.user.sub
-      );
+    async savePassword() {
+      if (
+        this.passwordForm.account_name &&
+        this.passwordForm.account_id &&
+        this.passwordForm.password
+      ) {
+        var ciphertext = CryptoJS.AES.encrypt(
+          this.passwordForm.password,
+          this.$auth.user.sub
+        );
 
-      let postData = {
-        user: this.$auth.user.email,
-        account_id: this.passwordForm.account_id,
-        account_name: this.passwordForm.account_name,
-        encrypted_password: ciphertext.toString()
+        let postData = {
+          user: this.$auth.user.email,
+          account_id: this.passwordForm.account_id,
+          account_name: this.passwordForm.account_name,
+          encrypted_password: ciphertext.toString()
+        };
+
+        console.log(postData);
+
+        this.processing = true;
+
+        await db.collection(passwords_db).add(postData);
+
+        this.processing = false;
+
+        this.showModal(
+          "Success",
+          `Password Successfully added for Account: ${this.passwordForm.account_name}`
+        );
+
+        //Clear form
+        this.passwordForm = {};
+      } else {
+        this.showModal("Error", `All fields are required`);
+      }
+    },
+    showModal(title, body) {
+      this.modal = {
+        show: true,
+        header: title,
+        content: body
       };
-
-      console.log(postData);
-
-      this.processing = true;
-
-      db.collection(passwords_db).add(postData);
     }
   }
 };
