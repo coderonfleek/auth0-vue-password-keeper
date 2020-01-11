@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import Vue from "vue";
 import { Auth0LockPasswordless } from "auth0-lock";
+import { user_localstorage_key } from "../../auth_config.json";
 
 /** Define a default action to perform after authentication */
 
@@ -53,6 +54,7 @@ export const useAuth0 = options => {
       },
       /** Logs the user out and removes their session on the authorization server */
       logout(o) {
+        localStorage.removeItem(user_localstorage_key);
         return this.auth0Lock.logout(o);
       },
       setProfileDetails(token, profile) {
@@ -60,6 +62,7 @@ export const useAuth0 = options => {
         this.accessToken = token;
         this.user = profile;
         this.isAuthenticated = true;
+        localStorage.setItem(user_localstorage_key, profile.email);
       }
     },
     /** Use this lifecycle method to instantiate the SDK client */
@@ -82,21 +85,6 @@ export const useAuth0 = options => {
           }
         );
       });
-
-      //Check the session if its still active an bring up login page if session has expired
-      /* this.auth0Lock.checkSession({}, (error, authResult) => {
-        if (error || !authResult) {
-          this.auth0Lock.show();
-        } else {
-          // user has an active session, so we can use the accessToken directly.
-          this.auth0Lock.getUserInfo(
-            authResult.accessToken,
-            (error, profile) => {
-              console.log(error, profile);
-            }
-          );
-        }
-      }); */
     }
   });
 

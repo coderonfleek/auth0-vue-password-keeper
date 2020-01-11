@@ -12,7 +12,9 @@
     "bootstrap": "^4.4.1",
     "core-js": "^2.6.11",
     "crypto-js": "^3.1.9-1",
-    "vue": "^2.6.10"
+    "firebase": "^7.6.2",
+    "vue": "^2.6.10",
+    "vuefire": "^2.2.1"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.0.1",

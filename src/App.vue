@@ -1,8 +1,8 @@
 <template>
   <div id="app">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-      <a class="navbar-brand" href="#"
-        >Password Keeper
+      <a class="navbar-brand" href="#">
+        Password Keeper
         <span v-if="$auth.isAuthenticated">( {{ $auth.user.name }} )</span>
       </a>
       <button
@@ -18,7 +18,7 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarText">
         <div class="navbar-nav mr-auto user-details">
-          <span v-if="$auth.isAuthenticated"> ({{ $auth.user.email }})</span>
+          <span v-if="$auth.isAuthenticated">({{ $auth.user.email }})</span>
           <span v-else>&nbsp;</span>
         </div>
 
@@ -63,31 +63,24 @@
             </div>
 
             <div class="form-group">
-              <label>Enter Password </label>
-              <input
-                class="form-control"
-                type="password"
-                v-model="passwordForm.password"
-              />
-              <small class="form-text text-muted">
-                We'll never share your secret with anyone else.
-              </small>
+              <label>Enter Password</label>
+              <input class="form-control" type="password" v-model="passwordForm.password" />
+              <small class="form-text text-muted">We'll never share your secret with anyone else.</small>
             </div>
 
             <button
               type="button"
               class="btn btn-primary"
               @click="savePassword()"
-            >
-              Save Password
-            </button>
+              :disabled="processing"
+            >{{processing? "Saving...": "Save Password"}}</button>
           </form>
         </div>
         <div class="col-md-6 offset-md-2">
           <h3>Saved Passwords</h3>
           <ul class="list-group">
-            <li class="list-group-item">
-              A Saved Password
+            <li class="list-group-item" v-for="password in savedpasswords" :key="password.id">
+              {{password.account_name}}
               <button class="btn btn-success float-right">View Password</button>
             </li>
           </ul>
@@ -100,18 +93,43 @@
 <script>
 import "bootstrap/dist/css/bootstrap.css";
 var CryptoJS = require("crypto-js");
+import db from "./db.js";
+import { passwords_db } from "../firebase_auth.json";
+import { user_localstorage_key } from "../auth_config.json";
+
+let loggedInUserEmail = localStorage.getItem(user_localstorage_key);
 
 export default {
   name: "app",
   data() {
     return {
       passwordForm: {},
-      salt: "DE8203F7-48D9-4904-949E-A7A5FA97BB20"
+      savedpasswords: [],
+      salt: "DE8203F7-48D9-4904-949E-A7A5FA97BB20",
+      processing: false
     };
+  },
+  firestore: {
+    savedpasswords: db
+      .collection(passwords_db)
+      //.orderBy("date", "asc")
+      .where("user", "==", loggedInUserEmail || "")
   },
   components: {},
   mounted() {
     this.$auth.checkSession();
+
+    //Watch changes and updates to Firestore database
+    db.collection(passwords_db)
+      .where("user", "==", loggedInUserEmail || "")
+      .onSnapshot(doc => {
+        this.processing = false;
+        this.passwordForm = {};
+
+        console.log("New data added");
+        //console.log("Current data: ", doc);
+        //this.savedpasswords = doc.docs;
+      });
   },
   methods: {
     login() {
@@ -126,7 +144,18 @@ export default {
         this.$auth.user.sub
       );
 
-      console.log(ciphertext.toString());
+      let postData = {
+        user: this.$auth.user.email,
+        account_id: this.passwordForm.account_id,
+        account_name: this.passwordForm.account_name,
+        encrypted_password: ciphertext.toString()
+      };
+
+      console.log(postData);
+
+      this.processing = true;
+
+      db.collection(passwords_db).add(postData);
     }
   }
 };
@@ -142,5 +171,9 @@ export default {
 #welcomeScreen,
 #appScreen {
   margin-top: 20px;
+}
+
+#welcomeScreen {
+  text-align: center;
 }
 </style>

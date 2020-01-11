@@ -1,4 +1,5 @@
 {
   "domain": "fikitout.auth0.com",
-  "clientId": "A0dWDJWcArieFCL30HdyvInT8oXPB4G1"
+  "clientId": "A0dWDJWcArieFCL30HdyvInT8oXPB4G1",
+  "user_localstorage_key": "password_keeper"
 }
