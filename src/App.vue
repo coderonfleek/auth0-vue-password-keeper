@@ -38,6 +38,9 @@
 
     <div v-if="!$auth.isAuthenticated" id="welcomeScreen">
       <h1>Welcome to Vue Password Keeper</h1>
+      <p>
+        <i>We'll never share your secret with anyone else.</i>
+      </p>
       <button class="btn btn-primary" @click="login()">Login To Auth0</button>
     </div>
     <div v-else id="appScreen" class="container">
@@ -81,7 +84,10 @@
           <ul class="list-group">
             <li class="list-group-item" v-for="password in savedpasswords" :key="password.id">
               {{password.account_name}}
-              <button class="btn btn-success float-right">View Password</button>
+              <button
+                class="btn btn-success float-right"
+                @click="viewPassword(password)"
+              >View Password</button>
             </li>
           </ul>
         </div>
@@ -101,7 +107,7 @@
 
 <script>
 import "bootstrap/dist/css/bootstrap.css";
-var CryptoJS = require("crypto-js");
+let CryptoJS = require("crypto-js");
 import db from "./db.js";
 import { passwords_db } from "../firebase_auth.json";
 import { user_localstorage_key } from "../auth_config.json";
@@ -115,7 +121,6 @@ export default {
     return {
       passwordForm: {},
       savedpasswords: [],
-      salt: "DE8203F7-48D9-4904-949E-A7A5FA97BB20",
       processing: false,
       modal: {
         show: false,
@@ -147,7 +152,7 @@ export default {
         this.passwordForm.account_id &&
         this.passwordForm.password
       ) {
-        var ciphertext = CryptoJS.AES.encrypt(
+        let ciphertext = CryptoJS.AES.encrypt(
           this.passwordForm.password,
           this.$auth.user.sub
         );
@@ -184,6 +189,19 @@ export default {
         header: title,
         content: body
       };
+    },
+    viewPassword(passwordDetails) {
+      //Decrypt password
+      let bytes = CryptoJS.AES.decrypt(
+        passwordDetails.encrypted_password,
+        this.$auth.user.sub
+      );
+      let plaintextPassword = bytes.toString(CryptoJS.enc.Utf8);
+
+      this.showModal(
+        `Credentials for ${passwordDetails.account_name}`,
+        `Account ID: ${passwordDetails.account_id}, Password: ${plaintextPassword}`
+      );
     }
   }
 };
